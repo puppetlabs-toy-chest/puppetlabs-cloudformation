@@ -1,0 +1,11 @@
+how can I turn off the rollback feature?
+how can I debug what caused a rollback?
+
+how to cfn-hooks work
+
+how can I watch for events related to a certain type of machine?
+  - 
+
+is it really single threaded? when is that likely to change?
+
+is there an easier way to install client tools? Are they available as a gem?

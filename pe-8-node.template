@@ -1,0 +1,601 @@
+{
+ "Parameters" : {
+    "KeyName": {
+      "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+      "Type": "String"
+    },
+    "PEId" : {
+      "Description" : "ID",
+      "Type" : "String",
+      "Default" : "puppet-enterprise-2.0rc1-62-g98b928c-el-6-i386"
+    },
+    "Payload" : {
+      "Description" : "URL of PE installer payload",
+      "Type" : "String",
+      "Default" : "https://s3.amazonaws.com/cloud-formation-pe/puppet-enterprise-2.0rc1-62-g98b928c-el-6-i386.tar.gz"
+    },
+    "MasterAnswersFile" : {
+      "Description": "URL where master answers file can be downloaded from",
+      "Type" : "String",
+      "Default" : "https://s3.amazonaws.com/cloud-formation-pe/full.answers"
+    },
+    "AgentAnswersFile" : {
+      "Description": "URL where agent answers file can be downloaded from",
+      "Type" : "String",
+      "Default" : "https://s3.amazonaws.com/cloud-formation-pe/agent.answers"
+    },
+    "Modules" : {
+      "Description" : "Names of modules to download from forge",
+      "Type" : "CommaDelimitedList",
+      "Default" : "foo"
+    },
+    "MasterInstanceType" : {
+      "Description" : "Instance type for master",
+      "Type" : "String",
+      "Default" : "m1.small"
+    },
+    "AgentInstanceType" : {
+      "Description" : "Instance type for agent",
+      "Type" : "String",
+      "Default" : "t1.micro"
+    }
+  },
+  "Mappings" : {
+    "AWSInstanceType2Arch" : {
+      "t1.micro"    : { "Arch" : "32" },
+      "m1.small"    : { "Arch" : "32" },
+      "m1.large"    : { "Arch" : "64" },
+      "m1.xlarge"   : { "Arch" : "64" },
+      "m2.xlarge"   : { "Arch" : "64" },
+      "m2.2xlarge"  : { "Arch" : "64" },
+      "m2.4xlarge"  : { "Arch" : "64" },
+      "c1.medium"   : { "Arch" : "32" },
+      "c1.xlarge"   : { "Arch" : "64" },
+      "cc1.4xlarge" : { "Arch" : "64" }
+    },
+    "AWSRegionArch2AMI" : {
+      "us-east-1"      : { "32" : "ami-7f418316", "64" : "ami-7341831a" },
+      "us-west-1"      : { "32" : "ami-951945d0", "64" : "ami-971945d2" },
+      "eu-west-1"      : { "32" : "ami-24506250", "64" : "ami-20506254" },
+      "ap-southeast-1" : { "32" : "ami-74dda626", "64" : "ami-7edda62c" },
+      "ap-northeast-1" : { "32" : "ami-dcfa4edd", "64" : "ami-e8fa4ee9" }
+    }
+  },
+  "Resources" : {
+    "PuppetMasterSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription" : "Allows communication to the puppet master",
+        "SecurityGroupIngress" : [
+          { "IpProtocol" : "tcp", "FromPort" :  "8140", "ToPort" : "8140", "SourceSecurityGroupName" : { "Ref" : "PuppetClientSecurityGroup" }},
+          { "IpProtocol" : "tcp", "FromPort" :  "61613", "ToPort" : "61613", "SourceSecurityGroupName" : { "Ref" : "PuppetClientSecurityGroup" }},
+          { "IpProtocol" : "tcp", "FromPort" : "3000", "ToPort" : "3000", "CidrIp": "0.0.0.0/0"},
+          { "IpProtocol" : "tcp", "FromPort" : "3001", "ToPort" : "3001", "CidrIp": "0.0.0.0/0"},
+          { "IpProtocol" : "tcp", "FromPort": "22", "ToPort": "22", "CidrIp": "0.0.0.0/0" }
+        ]
+      }
+    },
+    "PuppetClientSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription" : "Allows ssh connections to the agents",
+        "SecurityGroupIngress" : [
+          { "IpProtocol" : "tcp", "FromPort": "22", "ToPort": "22", "CidrIp": "0.0.0.0/0" }
+        ]
+      }
+    },
+    "CFNInitUser" : {
+      "Type" : "AWS::IAM::User",
+      "Properties" : {
+        "Policies": [{
+          "PolicyName": "AccessForCFNInit",
+          "PolicyDocument" : {
+            "Statement": [{
+              "Effect"   : "Allow",
+              "Action"   : "cloudformation:DescribeStackResource",
+              "Resource" : "*"
+             }]
+          }
+        }]
+      }
+    },
+    "CFNKeys" : {
+      "Type" : "AWS::IAM::AccessKey",
+      "Properties" : {
+        "UserName" : { "Ref": "CFNInitUser" }
+      }
+    },
+    "PuppetMasterInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Metadata" : {
+        "AWS::CloudFormation::Init" : {
+          "config" : {
+            "packages" : {
+              "yum" : {
+                "system-logos" : []
+              }
+            },
+            "sources": {
+              "/root/": {"Ref" : "Payload"}
+            },
+            "files": {
+              "/root/answers": {
+                "source" : { "Ref" : "MasterAnswersFile" }
+              },
+              "/etc/puppetlabs/puppet/autosign.conf" : {
+                "content" : "*"
+              },
+              "/etc/cfn/hooks.d/sign-client-certificate.conf": {
+                "content" : { "Fn::Join" : ["", [
+                  "[cfn-sign-cert-hook]\n",
+                    "triggers=post.add\n",
+                    "path=Resources.WebServer.Metadata.AWS::CloudFormation::Init\n",
+                    "action=/opt/aws/bin/cfn-init -s ", { "Ref" : "AWS::StackName" }, " -r PuppetClientInstance1 ",
+                        "  --access-key ", { "Ref" : "CFNKeys" },
+                        "  --secret-key ", {"Fn::GetAtt": ["CFNKeys", "SecretAccessKey"]},
+                        "  --region     ", { "Ref" : "AWS::Region" }, "\n",
+                    "runas=root\n"]]
+                }
+              }
+            }
+          }
+        }
+      },
+      "Properties": {
+        "InstanceType": { "Ref" : "MasterInstanceType"},
+        "ImageId" : { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref" : "AWS::Region" },
+                    { "Fn::FindInMap" : [ "AWSInstanceType2Arch", { "Ref" : "MasterInstanceType" }, "Arch" ] }
+ ] },
+        "KeyName": { "Ref": "KeyName" },
+        "SecurityGroups":  [ { "Ref" : "PuppetMasterSecurityGroup" } ],
+          "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+            "#!/bin/bash\n",
+            "/opt/aws/bin/cfn-init --region ", { "Ref" : "AWS::Region" },
+            "    -s ", { "Ref" : "AWS::StackName" }, " -r PuppetMasterInstance ",
+            "    --access-key ", { "Ref" : "CFNKeys" },
+            "    --secret-key ", { "Fn::GetAtt" : ["CFNKeys", "SecretAccessKey"]}, "\n",
+            "/root/", {"Ref" : "PEId"},"/puppet-enterprise-installer -a /root/answers -D  >& /tmp/pe-install.txt",  "\n",
+            "/opt/puppet/bin/htpasswd -cb /etc/puppetlabs/httpd/dashboardpass puppet-user puppet-password", "\n",
+            "/opt/aws/bin/cfn-signal -e $? '", { "Ref" : "PuppetMasterWaitHandle" }, "'\n",
+            "\n" ]]}}
+      }
+    },
+    "Agent1": {
+      "Type": "AWS::EC2::Instance",
+      "DependsOn" : "PuppetMasterWaitCondition",
+      "Metadata" : {
+        "AWS::CloudFormation::Init" : {
+          "config" : {
+            "sources": {
+              "/root/":  { "Ref" : "Payload" }
+            },
+            "files": {
+              "/root/answers": {
+                "source" : {"Ref" : "AgentAnswersFile"}
+              }
+            }
+          }
+        }
+      },
+      "Properties": {
+        "InstanceType": { "Ref" : "AgentInstanceType" },
+        "ImageId" : { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref" : "AWS::Region" },
+                    { "Fn::FindInMap" : [ "AWSInstanceType2Arch", { "Ref" : "AgentInstanceType" }, "Arch" ] }
+ ] },
+        "KeyName": { "Ref": "KeyName" },
+        "SecurityGroups":  [ { "Ref" : "PuppetClientSecurityGroup" } ],
+        "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+            "#!/bin/bash\n",
+            "/opt/aws/bin/cfn-init --region ", { "Ref" : "AWS::Region" },
+            "    -s ", { "Ref" : "AWS::StackName" }, " -r Agent1 ",
+            "    --access-key ", { "Ref" : "CFNKeys" },
+            "    --secret-key ", { "Fn::GetAtt" : ["CFNKeys", "SecretAccessKey"]}, "\n",
+            "echo 'q_puppetagent_server=", { "Fn::GetAtt" : [ "PuppetMasterInstance", "PrivateDnsName" ] } ,"' >> /root/answers", "\n",
+            "/root/", {"Ref" : "PEId"},"/puppet-enterprise-installer -a /root/answers -D  >& /tmp/pe-install.txt",  "\n",
+            "/opt/aws/bin/cfn-signal -e $? '", { "Ref" : "Agent1WaitHandle" }, "'\n",
+            "\n" ]]}}
+      }
+    },
+    "Agent2": {
+      "Type": "AWS::EC2::Instance",
+      "DependsOn" : "PuppetMasterWaitCondition",
+      "Metadata" : {
+        "AWS::CloudFormation::Init" : {
+          "config" : {
+            "sources": {
+              "/root/":  { "Ref" : "Payload" }
+            },
+            "files": {
+              "/root/answers": {
+                "source" : {"Ref" : "AgentAnswersFile"}
+              }
+            }
+          }
+        }
+      },
+      "Properties": {
+        "InstanceType": { "Ref" : "AgentInstanceType" },
+        "ImageId" : { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref" : "AWS::Region" },
+                    { "Fn::FindInMap" : [ "AWSInstanceType2Arch", { "Ref" : "AgentInstanceType" }, "Arch" ] }
+ ] },
+        "KeyName": { "Ref": "KeyName" },
+        "SecurityGroups":  [ { "Ref" : "PuppetClientSecurityGroup" } ],
+        "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+            "#!/bin/bash\n",
+            "/opt/aws/bin/cfn-init --region ", { "Ref" : "AWS::Region" },
+            "    -s ", { "Ref" : "AWS::StackName" }, " -r Agent2 ",
+            "    --access-key ", { "Ref" : "CFNKeys" },
+            "    --secret-key ", { "Fn::GetAtt" : ["CFNKeys", "SecretAccessKey"]}, "\n",
+            "echo 'q_puppetagent_server=", { "Fn::GetAtt" : [ "PuppetMasterInstance", "PrivateDnsName" ] } ,"' >> /root/answers", "\n",
+            "/root/", {"Ref" : "PEId"},"/puppet-enterprise-installer -a /root/answers -D  >& /tmp/pe-install.txt",  "\n",
+            "/opt/aws/bin/cfn-signal -e $? '", { "Ref" : "Agent2WaitHandle" }, "'\n",
+            "\n" ]]}}
+      }
+    },
+    "Agent3": {
+      "Type": "AWS::EC2::Instance",
+      "DependsOn" : "PuppetMasterWaitCondition",
+      "Metadata" : {
+        "AWS::CloudFormation::Init" : {
+          "config" : {
+            "sources": {
+              "/root/":  { "Ref" : "Payload" }
+            },
+            "files": {
+              "/root/answers": {
+                "source" : {"Ref" : "AgentAnswersFile"}
+              }
+            }
+          }
+        }
+      },
+      "Properties": {
+        "InstanceType": { "Ref" : "AgentInstanceType" },
+        "ImageId" : { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref" : "AWS::Region" },
+                    { "Fn::FindInMap" : [ "AWSInstanceType2Arch", { "Ref" : "AgentInstanceType" }, "Arch" ] }
+ ] },
+        "KeyName": { "Ref": "KeyName" },
+        "SecurityGroups":  [ { "Ref" : "PuppetClientSecurityGroup" } ],
+        "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+            "#!/bin/bash\n",
+            "/opt/aws/bin/cfn-init --region ", { "Ref" : "AWS::Region" },
+            "    -s ", { "Ref" : "AWS::StackName" }, " -r Agent3 ",
+            "    --access-key ", { "Ref" : "CFNKeys" },
+            "    --secret-key ", { "Fn::GetAtt" : ["CFNKeys", "SecretAccessKey"]}, "\n",
+            "echo 'q_puppetagent_server=", { "Fn::GetAtt" : [ "PuppetMasterInstance", "PrivateDnsName" ] } ,"' >> /root/answers", "\n",
+            "/root/", {"Ref" : "PEId"},"/puppet-enterprise-installer -a /root/answers -D  >& /tmp/pe-install.txt",  "\n",
+            "/opt/aws/bin/cfn-signal -e $? '", { "Ref" : "Agent3WaitHandle" }, "'\n",
+            "\n" ]]}}
+      }
+    },
+    "Agent4": {
+      "Type": "AWS::EC2::Instance",
+      "DependsOn" : "PuppetMasterWaitCondition",
+      "Metadata" : {
+        "AWS::CloudFormation::Init" : {
+          "config" : {
+            "sources": {
+              "/root/":  { "Ref" : "Payload" }
+            },
+            "files": {
+              "/root/answers": {
+                "source" : {"Ref" : "AgentAnswersFile"}
+              }
+            }
+          }
+        }
+      },
+      "Properties": {
+        "InstanceType": { "Ref" : "AgentInstanceType" },
+        "ImageId" : { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref" : "AWS::Region" },
+                    { "Fn::FindInMap" : [ "AWSInstanceType2Arch", { "Ref" : "AgentInstanceType" }, "Arch" ] }
+ ] },
+        "KeyName": { "Ref": "KeyName" },
+        "SecurityGroups":  [ { "Ref" : "PuppetClientSecurityGroup" } ],
+        "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+            "#!/bin/bash\n",
+            "/opt/aws/bin/cfn-init --region ", { "Ref" : "AWS::Region" },
+            "    -s ", { "Ref" : "AWS::StackName" }, " -r Agent4 ",
+            "    --access-key ", { "Ref" : "CFNKeys" },
+            "    --secret-key ", { "Fn::GetAtt" : ["CFNKeys", "SecretAccessKey"]}, "\n",
+            "echo 'q_puppetagent_server=", { "Fn::GetAtt" : [ "PuppetMasterInstance", "PrivateDnsName" ] } ,"' >> /root/answers", "\n",
+            "/root/", {"Ref" : "PEId"},"/puppet-enterprise-installer -a /root/answers -D  >& /tmp/pe-install.txt",  "\n",
+            "/opt/aws/bin/cfn-signal -e $? '", { "Ref" : "Agent4WaitHandle" }, "'\n",
+            "\n" ]]}}
+      }
+    },
+    "Agent5": {
+      "Type": "AWS::EC2::Instance",
+      "DependsOn" : "PuppetMasterWaitCondition",
+      "Metadata" : {
+        "AWS::CloudFormation::Init" : {
+          "config" : {
+            "sources": {
+              "/root/":  { "Ref" : "Payload" }
+            },
+            "files": {
+              "/root/answers": {
+                "source" : {"Ref" : "AgentAnswersFile"}
+              }
+            }
+          }
+        }
+      },
+      "Properties": {
+        "InstanceType": { "Ref" : "AgentInstanceType" },
+        "ImageId" : { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref" : "AWS::Region" },
+                    { "Fn::FindInMap" : [ "AWSInstanceType2Arch", { "Ref" : "AgentInstanceType" }, "Arch" ] }
+ ] },
+        "KeyName": { "Ref": "KeyName" },
+        "SecurityGroups":  [ { "Ref" : "PuppetClientSecurityGroup" } ],
+        "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+            "#!/bin/bash\n",
+            "/opt/aws/bin/cfn-init --region ", { "Ref" : "AWS::Region" },
+            "    -s ", { "Ref" : "AWS::StackName" }, " -r Agent5 ",
+            "    --access-key ", { "Ref" : "CFNKeys" },
+            "    --secret-key ", { "Fn::GetAtt" : ["CFNKeys", "SecretAccessKey"]}, "\n",
+            "echo 'q_puppetagent_server=", { "Fn::GetAtt" : [ "PuppetMasterInstance", "PrivateDnsName" ] } ,"' >> /root/answers", "\n",
+            "/root/", {"Ref" : "PEId"},"/puppet-enterprise-installer -a /root/answers -D  >& /tmp/pe-install.txt",  "\n",
+            "/opt/aws/bin/cfn-signal -e $? '", { "Ref" : "Agent5WaitHandle" }, "'\n",
+            "\n" ]]}}
+      }
+    },
+    "Agent6": {
+      "Type": "AWS::EC2::Instance",
+      "DependsOn" : "PuppetMasterWaitCondition",
+      "Metadata" : {
+        "AWS::CloudFormation::Init" : {
+          "config" : {
+            "sources": {
+              "/root/":  { "Ref" : "Payload" }
+            },
+            "files": {
+              "/root/answers": {
+                "source" : {"Ref" : "AgentAnswersFile"}
+              }
+            }
+          }
+        }
+      },
+      "Properties": {
+        "InstanceType": { "Ref" : "AgentInstanceType" },
+        "ImageId" : { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref" : "AWS::Region" },
+                    { "Fn::FindInMap" : [ "AWSInstanceType2Arch", { "Ref" : "AgentInstanceType" }, "Arch" ] }
+ ] },
+        "KeyName": { "Ref": "KeyName" },
+        "SecurityGroups":  [ { "Ref" : "PuppetClientSecurityGroup" } ],
+        "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+            "#!/bin/bash\n",
+            "/opt/aws/bin/cfn-init --region ", { "Ref" : "AWS::Region" },
+            "    -s ", { "Ref" : "AWS::StackName" }, " -r Agent6 ",
+            "    --access-key ", { "Ref" : "CFNKeys" },
+            "    --secret-key ", { "Fn::GetAtt" : ["CFNKeys", "SecretAccessKey"]}, "\n",
+            "echo 'q_puppetagent_server=", { "Fn::GetAtt" : [ "PuppetMasterInstance", "PrivateDnsName" ] } ,"' >> /root/answers", "\n",
+            "/root/", {"Ref" : "PEId"},"/puppet-enterprise-installer -a /root/answers -D  >& /tmp/pe-install.txt",  "\n",
+            "/opt/aws/bin/cfn-signal -e $? '", { "Ref" : "Agent6WaitHandle" }, "'\n",
+            "\n" ]]}}
+      }
+    },
+    "Agent7": {
+      "Type": "AWS::EC2::Instance",
+      "DependsOn" : "PuppetMasterWaitCondition",
+      "Metadata" : {
+        "AWS::CloudFormation::Init" : {
+          "config" : {
+            "sources": {
+              "/root/":  { "Ref" : "Payload" }
+            },
+            "files": {
+              "/root/answers": {
+                "source" : {"Ref" : "AgentAnswersFile"}
+              }
+            }
+          }
+        }
+      },
+      "Properties": {
+        "InstanceType": { "Ref" : "AgentInstanceType" },
+        "ImageId" : { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref" : "AWS::Region" },
+                    { "Fn::FindInMap" : [ "AWSInstanceType2Arch", { "Ref" : "AgentInstanceType" }, "Arch" ] }
+ ] },
+        "KeyName": { "Ref": "KeyName" },
+        "SecurityGroups":  [ { "Ref" : "PuppetClientSecurityGroup" } ],
+        "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+            "#!/bin/bash\n",
+            "/opt/aws/bin/cfn-init --region ", { "Ref" : "AWS::Region" },
+            "    -s ", { "Ref" : "AWS::StackName" }, " -r Agent7 ",
+            "    --access-key ", { "Ref" : "CFNKeys" },
+            "    --secret-key ", { "Fn::GetAtt" : ["CFNKeys", "SecretAccessKey"]}, "\n",
+            "echo 'q_puppetagent_server=", { "Fn::GetAtt" : [ "PuppetMasterInstance", "PrivateDnsName" ] } ,"' >> /root/answers", "\n",
+            "/root/", {"Ref" : "PEId"},"/puppet-enterprise-installer -a /root/answers -D  >& /tmp/pe-install.txt",  "\n",
+            "/opt/aws/bin/cfn-signal -e $? '", { "Ref" : "Agent7WaitHandle" }, "'\n",
+            "\n" ]]}}
+      }
+    },
+    "Agent8": {
+      "Type": "AWS::EC2::Instance",
+      "DependsOn" : "PuppetMasterWaitCondition",
+      "Metadata" : {
+        "AWS::CloudFormation::Init" : {
+          "config" : {
+            "sources": {
+              "/root/":  { "Ref" : "Payload" }
+            },
+            "files": {
+              "/root/answers": {
+                "source" : {"Ref" : "AgentAnswersFile"}
+              }
+            }
+          }
+        }
+      },
+      "Properties": {
+        "InstanceType": { "Ref" : "AgentInstanceType" },
+        "ImageId" : { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref" : "AWS::Region" },
+                    { "Fn::FindInMap" : [ "AWSInstanceType2Arch", { "Ref" : "AgentInstanceType" }, "Arch" ] }
+ ] },
+        "KeyName": { "Ref": "KeyName" },
+        "SecurityGroups":  [ { "Ref" : "PuppetClientSecurityGroup" } ],
+        "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+            "#!/bin/bash\n",
+            "/opt/aws/bin/cfn-init --region ", { "Ref" : "AWS::Region" },
+            "    -s ", { "Ref" : "AWS::StackName" }, " -r Agent8 ",
+            "    --access-key ", { "Ref" : "CFNKeys" },
+            "    --secret-key ", { "Fn::GetAtt" : ["CFNKeys", "SecretAccessKey"]}, "\n",
+            "echo 'q_puppetagent_server=", { "Fn::GetAtt" : [ "PuppetMasterInstance", "PrivateDnsName" ] } ,"' >> /root/answers", "\n",
+            "/root/", {"Ref" : "PEId"},"/puppet-enterprise-installer -a /root/answers -D  >& /tmp/pe-install.txt",  "\n",
+            "/opt/aws/bin/cfn-signal -e $? '", { "Ref" : "Agent8WaitHandle" }, "'\n",
+            "\n" ]]}}
+      }
+    },
+    "Agent1WaitHandle" : {
+       "Type" : "AWS::CloudFormation::WaitConditionHandle",
+       "Properties" : {
+       }
+    },
+    "Agent1WaitCondition" : {
+      "Type" : "AWS::CloudFormation::WaitCondition",
+      "DependsOn" : "Agent1",
+      "Properties" : {
+        "Handle" : { "Ref" : "Agent1WaitHandle" },
+        "Timeout" : "600"
+      }
+    },
+    "Agent2WaitHandle" : {
+       "Type" : "AWS::CloudFormation::WaitConditionHandle",
+       "Properties" : {
+       }
+    },
+    "Agent2WaitCondition" : {
+      "Type" : "AWS::CloudFormation::WaitCondition",
+      "DependsOn" : "Agent2",
+      "Properties" : {
+        "Handle" : { "Ref" : "Agent2WaitHandle" },
+        "Timeout" : "600"
+      }
+    },
+    "Agent3WaitHandle" : {
+       "Type" : "AWS::CloudFormation::WaitConditionHandle",
+       "Properties" : {
+       }
+    },
+    "Agent3WaitCondition" : {
+      "Type" : "AWS::CloudFormation::WaitCondition",
+      "DependsOn" : "Agent3",
+      "Properties" : {
+        "Handle" : { "Ref" : "Agent3WaitHandle" },
+        "Timeout" : "600"
+      }
+    },
+    "Agent4WaitHandle" : {
+       "Type" : "AWS::CloudFormation::WaitConditionHandle",
+       "Properties" : {
+       }
+    },
+    "Agent4WaitCondition" : {
+      "Type" : "AWS::CloudFormation::WaitCondition",
+      "DependsOn" : "Agent4",
+      "Properties" : {
+        "Handle" : { "Ref" : "Agent4WaitHandle" },
+        "Timeout" : "600"
+      }
+    },
+    "Agent5WaitHandle" : {
+       "Type" : "AWS::CloudFormation::WaitConditionHandle",
+       "Properties" : {
+       }
+    },
+    "Agent5WaitCondition" : {
+      "Type" : "AWS::CloudFormation::WaitCondition",
+      "DependsOn" : "Agent5",
+      "Properties" : {
+        "Handle" : { "Ref" : "Agent5WaitHandle" },
+        "Timeout" : "600"
+      }
+    },
+    "Agent6WaitHandle" : {
+       "Type" : "AWS::CloudFormation::WaitConditionHandle",
+       "Properties" : {
+       }
+    },
+    "Agent6WaitCondition" : {
+      "Type" : "AWS::CloudFormation::WaitCondition",
+      "DependsOn" : "Agent6",
+      "Properties" : {
+        "Handle" : { "Ref" : "Agent6WaitHandle" },
+        "Timeout" : "600"
+      }
+    },
+    "Agent7WaitHandle" : {
+       "Type" : "AWS::CloudFormation::WaitConditionHandle",
+       "Properties" : {
+       }
+    },
+    "Agent7WaitCondition" : {
+      "Type" : "AWS::CloudFormation::WaitCondition",
+      "DependsOn" : "Agent7",
+      "Properties" : {
+        "Handle" : { "Ref" : "Agent7WaitHandle" },
+        "Timeout" : "600"
+      }
+    },
+    "Agent8WaitHandle" : {
+       "Type" : "AWS::CloudFormation::WaitConditionHandle",
+       "Properties" : {
+       }
+    },
+    "Agent8WaitCondition" : {
+      "Type" : "AWS::CloudFormation::WaitCondition",
+      "DependsOn" : "Agent8",
+      "Properties" : {
+        "Handle" : { "Ref" : "Agent8WaitHandle" },
+        "Timeout" : "600"
+      }
+    },
+    "PuppetMasterWaitHandle" : {
+       "Type" : "AWS::CloudFormation::WaitConditionHandle",
+       "Properties" : {
+       }
+    },
+    "PuppetMasterWaitCondition" : {
+      "Type" : "AWS::CloudFormation::WaitCondition",
+      "DependsOn" : "PuppetMasterInstance",
+      "Properties" : {
+        "Handle" : { "Ref" : "PuppetMasterWaitHandle" },
+        "Timeout" : "600"
+      }
+    }
+  },
+  "Outputs" : {
+    "PuppetMasterPublicDnsName" : {
+      "Value" : { "Fn::GetAtt" : [ "PuppetMasterInstance", "PublicDnsName" ] }
+    },
+    "PuppetClientPublicDnsName" : {
+      "Value" : { "Fn::GetAtt" : [ "Agent1", "PublicDnsName" ] }
+    },
+    "PuppetClientPublicDnsName" : {
+      "Value" : { "Fn::GetAtt" : [ "Agent2", "PublicDnsName" ] }
+    },
+    "PuppetClientPublicDnsName" : {
+      "Value" : { "Fn::GetAtt" : [ "Agent3", "PublicDnsName" ] }
+    },
+    "PuppetClientPublicDnsName" : {
+      "Value" : { "Fn::GetAtt" : [ "Agent4", "PublicDnsName" ] }
+    },
+    "PuppetClientPublicDnsName" : {
+      "Value" : { "Fn::GetAtt" : [ "Agent5", "PublicDnsName" ] }
+    },
+    "PuppetClientPublicDnsName" : {
+      "Value" : { "Fn::GetAtt" : [ "Agent6", "PublicDnsName" ] }
+    },
+    "PuppetClientPublicDnsName" : {
+      "Value" : { "Fn::GetAtt" : [ "Agent7", "PublicDnsName" ] }
+    },
+    "PuppetClientPublicDnsName" : {
+      "Value" : { "Fn::GetAtt" : [ "Agent8", "PublicDnsName" ] }
+    },
+    "PuppetMasterPrivateDnsName" : {
+      "Value" : { "Fn::GetAtt" : [ "PuppetMasterInstance", "PrivateDnsName" ] }
+    }
+  }
+}
