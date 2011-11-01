@@ -1,0 +1,16 @@
+This project contains an aws cloud formation template that is capable of deploying
+a cluster of nodes with puppet enterprise installed.
+
+## Installation
+
+requires that the aws cloud formation developer tools are installed in order to launch
+application stacks from the command line.
+
+The steps below were based on the following getting started guide:
+http://docs.amazonwebservices.com/AWSCloudFormation/latest/GettingStartedGuide/
+
+* run install.sh to download the required client tools and generate the base bashrc_cnf
+* update bashrc_cfn to ensure that it is using the correct paths for JAVA_HOME
+* add your ec2 credentials to credential-file-path.template
+* source bashrc_cnf to set up environment
+* you may need to sync your clock before contacting the remote server
