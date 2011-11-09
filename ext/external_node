@@ -1,0 +1,29 @@
+#!/opt/puppet/bin/ruby
+require 'puppet'
+require 'puppet/face'
+require 'yaml'
+# assumes that this credential file has been laid down
+# should contain credentials with cloudformation:DescribeStackResource
+# access to the resource being classified
+credential_file='/var/lib/cfn-init/data/cfn-credentials'
+
+# figure out which facts terminus to use
+# is this the best way to set runmode out side of an application?
+$puppet_application_mode = Puppet::Util::RunMode[:master]
+Puppet[:config]='/etc/puppetlabs/puppet/puppet.conf'
+Puppet.parse_config
+facts = Puppet::Face[:facts, :current].find(ARGV.first)
+if facts
+  # right now this is hard coded for region us-east-1
+  # the stackname and resource id facts are currently laid
+  # down by the cloud formation script
+  if facts.values['cfn_stack_name'] and facts.values['cfn_resource_id'] and File.exists?(credential_file)
+    command = "/opt/aws/bin/cfn-get-metadata --region us-east-1 -s #{facts.values['cfn_stack_name']} -r #{facts.values['cfn_resource_id']} -f #{credential_file} --key Puppet"
+    classification_meta_data = `#{command}`.downcase
+    unless classification_meta_data == ''
+      puts PSON.parse(classification_meta_data).to_yaml
+      exit 0
+    end
+  end
+end
+puts({'classes' => []}.to_yaml)
