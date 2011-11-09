@@ -116,7 +116,8 @@
               }
             },
             "sources": {
-              "/root/": {"Ref" : "Payload"}
+              "/root/": {"Ref" : "Payload"},
+              "/root/puppetlabs-dashboard/" : "https://github.com/bodepd/puppetlabs-dashboard/tarball/master"
             },
             "files": {
               "/root/answers": {
@@ -155,6 +156,7 @@
             "    --access-key ", { "Ref" : "CFNKeys" },
             "    --secret-key ", { "Fn::GetAtt" : ["CFNKeys", "SecretAccessKey"]}, "\n",
             "/root/", {"Ref" : "PEId"},"/puppet-enterprise-installer -a /root/answers -D  >& /tmp/pe-install.txt",  "\n",
+            "export PATH=/usr/local/bin/:$PATH;export RUBYLIB=/root/puppetlabs-dashboard/lib;/opt/puppet/bin/puppet dashboard add_module --modulepath /etc/puppetlabs/puppet/modules/ --enc-server localhost --module-name=<%= install_modules.join(',') %>", "\n",
             "/opt/puppet/bin/htpasswd -cb /etc/puppetlabs/httpd/dashboardpass puppet-user puppet-password", "\n",
             "/opt/aws/bin/cfn-signal -e $? '", { "Ref" : "PuppetMasterWaitHandle" }, "'\n",
             "\n" ]]}}
