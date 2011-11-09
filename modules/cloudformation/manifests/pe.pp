@@ -1,8 +1,7 @@
-class cloudformation::pe(
-  $file_name,
   $puppet_agents
+define cloudformation::pe(
 ) {
-  file { $file_name:
+  file { $name:
     content => template('cloudformation/pe.erb')
   }
 }
