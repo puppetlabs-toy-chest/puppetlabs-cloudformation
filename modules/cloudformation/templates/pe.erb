@@ -126,17 +126,6 @@
               "/etc/puppetlabs/puppet/autosign.conf" : {
                 "content" : "*"
               },
-              "/etc/cfn/hooks.d/sign-client-certificate.conf": {
-                "content" : { "Fn::Join" : ["", [
-                  "[cfn-sign-cert-hook]\n",
-                    "triggers=post.add\n",
-                    "path=Resources.WebServer.Metadata.AWS::CloudFormation::Init\n",
-                    "action=/opt/aws/bin/cfn-init -s ", { "Ref" : "AWS::StackName" }, " -r PuppetClientInstance1 ",
-                        "  --access-key ", { "Ref" : "CFNKeys" },
-                        "  --secret-key ", {"Fn::GetAtt": ["CFNKeys", "SecretAccessKey"]},
-                        "  --region     ", { "Ref" : "AWS::Region" }, "\n",
-                    "runas=root\n"]]
-                }
               "/var/lib/cfn-init/data/cfn-credentials": {
                 "content": { "Fn::Join" : ["", [
                   "AWSAccessKeyId=", { "Ref" : "CFNKeys" }, "\n",
