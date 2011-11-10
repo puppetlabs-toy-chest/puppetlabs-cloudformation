@@ -160,7 +160,7 @@
             "mv /var/lib/cfn-init/data/external_node /etc/puppetlabs/puppet-dashboard/external_node", "\n",
             "chown pe-puppet:pe-puppet /var/lib/cfn-init/data/cfn-credentials /etc/puppetlabs/puppet-dashboard/external_node", "\n",
             "export PATH=/usr/local/bin/:$PATH;export RUBYLIB=/root/puppetlabs-dashboard/lib;/opt/puppet/bin/puppet dashboard add_module --modulepath /etc/puppetlabs/puppet/modules/ --enc-server localhost --module-name=<%= install_modules.join(',') %>", "\n",
-            "/opt/puppet/bin/htpasswd -cb /etc/puppetlabs/httpd/dashboardpass puppet-user puppet-password", "\n",
+            "echo 'node default { include pe_mcollective }' > /etc/puppetlabs/puppet/manifests/site.pp", "\n",
             "/opt/aws/bin/cfn-signal -e $? '", { "Ref" : "PuppetMasterWaitHandle" }, "'\n",
             "\n" ]]}}
       }
