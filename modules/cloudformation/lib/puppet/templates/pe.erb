@@ -156,6 +156,7 @@
             "    -s ", { "Ref" : "AWS::StackName" }, " -r PuppetMasterInstance ",
             "    --access-key ", { "Ref" : "CFNKeys" },
             "    --secret-key ", { "Fn::GetAtt" : ["CFNKeys", "SecretAccessKey"]}, "\n",
+            "echo \"`ifconfig eth0 | grep 'inet addr' | cut -d ':' -f 2 | cut -d ' ' -f 1` `hostname -s` `hostname -f`\" >> /etc/hosts", "\n",
             "/root/", {"Ref" : "PEId"},"/puppet-enterprise-installer -a /root/answers -D  >& /tmp/pe-install.txt",  "\n",
             "mv /var/lib/cfn-init/data/external_node /etc/puppetlabs/puppet-dashboard/external_node", "\n",
             "chown pe-puppet:pe-puppet /var/lib/cfn-init/data/cfn-credentials /etc/puppetlabs/puppet-dashboard/external_node", "\n",
