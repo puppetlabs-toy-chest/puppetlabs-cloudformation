@@ -117,9 +117,6 @@
               "/root/answers": {
                 "source" : { "Ref" : "MasterAnswersFile" }
               },
-              "/etc/puppetlabs/puppet/autosign.conf" : {
-                "content" : "*"
-              },
               "/var/lib/cfn-init/data/cfn-credentials": {
                 "content": { "Fn::Join" : ["", [
                   "AWSAccessKeyId=", { "Ref" : "CFNKeys" }, "\n",
@@ -152,6 +149,7 @@
             "    --secret-key ", { "Fn::GetAtt" : ["CFNKeys", "SecretAccessKey"]}, "\n",
             "echo \"`ifconfig eth0 | grep 'inet addr' | cut -d ':' -f 2 | cut -d ' ' -f 1` `hostname -s` `hostname -f`\" >> /etc/hosts", "\n",
             "/root/", {"Ref" : "PEId"},"/puppet-enterprise-installer -a /root/answers -D  >& /tmp/pe-install.txt",  "\n",
+            "echo '*' >> /etc/puppetlabs/puppet/autosign.conf", "\n",
             "mv /var/lib/cfn-init/data/external_node /etc/puppetlabs/puppet-dashboard/external_node", "\n",
             "chown pe-puppet:pe-puppet /var/lib/cfn-init/data/cfn-credentials /etc/puppetlabs/puppet-dashboard/external_node", "\n",
             "export PATH=/usr/local/bin/:$PATH;export RUBYLIB=/root/puppetlabs-dashboard/lib;/opt/puppet/bin/puppet dashboard add_module --modulepath /etc/puppetlabs/puppet/modules/ --enc-server localhost --enc-port 443 --enc-ssl --enc-auth-user cfn_user --enc-auth-passwd cfn_password --module-name=<%= install_modules.join(',') %>", "\n",
