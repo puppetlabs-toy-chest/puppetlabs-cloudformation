@@ -5,3 +5,4 @@ q_puppet_symlinks_install=y
 q_puppetagent_certname=`/opt/aws/bin/ec2-metadata --local-hostname | awk --compat -F': ' '{print $2}'`-`/opt/aws/bin/ec2-metadata --instance-id | awk --compat -F': ' '{print $2}'`
 q_puppetagent_install=y
 q_puppetmaster_install=n
+q_vendor_packages_install=y
