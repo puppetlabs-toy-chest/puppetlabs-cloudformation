@@ -109,11 +109,6 @@
       "Metadata" : {
         "AWS::CloudFormation::Init" : {
           "config" : {
-            "packages" : {
-              "yum" : {
-                "system-logos" : []
-              }
-            },
             "sources": {
               "/root/": {"Ref" : "Payload"},
               "/root/puppetlabs-dashboard/" : "https://github.com/bodepd/puppetlabs-dashboard/tarball/master"
