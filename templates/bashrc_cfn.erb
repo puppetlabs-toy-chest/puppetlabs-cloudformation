@@ -1,5 +1,5 @@
 export AWS_CLOUDFORMATION_HOME=<%= base_dir %>/AWSCloudFormation-<%= cfn_version %>
 export PATH=$AWS_CLOUDFORMATION_HOME/bin:$PATH
 export AWS_CREDENTIAL_FILE=<%= aws_credential_file %>
-# detects JAVA_HOME on macs
 export JAVA_HOME=<%= java_home %>
+export RUBYLIB=<%= base_dir %>/lib:$RUBYLIB
