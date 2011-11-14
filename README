@@ -27,3 +27,52 @@ Configure your cfn client tools by sourcing this file:
 After you source this file, verify that your cfn tools work:
 
   cfn-describe-stacks
+
+## Cloud formation face
+
+After you have sourced the bashrc file, you should be able to use the cloudformation face.
+
+To get details of how to use the face, you can run:
+
+  puppet help cloudformation deploy
+
+The cloudformation face allows you to specify data in yaml that can be used to
+deploy a full application stack using Puppet Enterprise.
+
+It creates all of the required AWS resources, including: security groups, IAM users, an
+ec2 instance with the puppet master and modules installed, and a configurable number of
+puppet agents with their classification information specified.
+
+## stack config file
+
+The config file used to specify how to build the stack takes the following configuration
+options:
+
+install_modules - list of modules that should be installed on the master from the moduleforge
+
+  install_modules
+   - puppetlabs-stdlib
+   - puppetlabs-ntp
+
+The above example, would create the directories ntp and stdlib at the /etc/puppetlabs/puppet/modules
+directory.
+
+puppet_agents - hash of ec2 instances that should be created and have puppet agents installed on
+them.
+
+The structure of the hash is described below:
+
+puppet_agents:
+  resource_id:
+    class_name1:
+      class_param1
+    class_name2:
+      class_param2
+
+There are a few existing examples in teh config directory:
+
+# deploying a stack
+
+The following invocation will deploy one of the example stacks:
+
+  puppet cloudformation deploy --keyname dans_keys --config config/ntp_nodes.config --stack-name DanStack1 --disable-rollback
