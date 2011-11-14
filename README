@@ -3,14 +3,27 @@ a cluster of nodes with puppet enterprise installed.
 
 ## Installation
 
-requires that the aws cloud formation developer tools are installed in order to launch
-application stacks from the command line.
+The amazon cloud formation client tools can be downloaded
+using the cloudformation puppet class.
 
-The steps below were based on the following getting started guide:
-http://docs.amazonwebservices.com/AWSCloudFormation/latest/GettingStartedGuide/
+The following example manifest can be found at examples/install.pp
 
-* run install.sh to download the required client tools and generate the base bashrc_cnf
-* update bashrc_cfn to ensure that it is using the correct paths for JAVA_HOME
-* add your ec2 credentials to credential-file-path.template
-* source bashrc_cnf to set up environment
-* you may need to sync your clock before contacting the remote server
+  class { 'cloudformation':
+    aws_access_key => '< your key here >',
+    aws_secret_key => '< your secret key here >'
+  }
+
+Add your aws credentials to the class declaration, ensure the cloudformation module
+is in your module path, and use puppet to apply the installation manifest:
+
+  puppet apply examples/install.pp
+
+This will install the client tools and create the file: bashrc_cfn
+
+Configure your cfn client tools by sourcing this file:
+
+  source bash_rc
+
+After you source this file, verify that your cfn tools work:
+
+  cfn-describe-stacks
