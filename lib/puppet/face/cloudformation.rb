@@ -27,14 +27,32 @@ Puppet::Face.define(:cloudformation, '0.0.1') do
       required
     end
     option '--keyname=' do
-        summary 'The AWS SSH key name as shown in the AWS console.  Please see the related list_keynames action.'
-        description <<-EOT
-          This options expects the name of the SSH key pair as listed in the
-          Amazon AWS console.  CloudFormation will use this information to tell Amazon
-          to install the public SSH key into the authorized_keys file of the new EC2
-          instance.
-        EOT
+      summary 'The AWS SSH key name as shown in the AWS console.  Please see the related list_keynames action.'
+      description <<-EOT
+        This options expects the name of the SSH key pair as listed in the
+        Amazon AWS console.  CloudFormation will use this information to tell Amazon
+        to install the public SSH key into the authorized_keys file of the new EC2
+        instance.
+      EOT
       required
+    end
+    option '--region=' do
+      summary "The geographic region of the instance. Defaults to us-east-1."
+      description <<-'EOT'
+        The instance may run in any region EC2 operates within.  The regions at the
+        time of this documentation are: US East (Northern Virginia), US West (Northern
+        California, Oregon), EU (Ireland), Asia Pacific (Singapore), and Asia Pacific (Tokyo).
+
+        The region names for this command are: eu-west-1, us-east-1,
+        ap-northeast-1, us-west-1, us-west-2, ap-southeast-1
+
+        Region can also be specified using the EC2_REGION environment variable.
+
+        Note: to use another region, you will need to copy your keypair.
+      EOT
+      default_to do
+        ENV['EC2_REGION'] || 'us-east-1'
+      end
     end
     option '--disable-rollback' do
       summary 'by default cloudformation terminates stacks that have failure, this disables that feature'
@@ -60,7 +78,7 @@ Puppet::Face.define(:cloudformation, '0.0.1') do
       temp_cfn_template.write(cfn_template_contents)
       temp_cfn_template.close
 
-      command = "cfn-create-stack #{options[:stack_name]} --template-file #{temp_cfn_template.path} --parameters='KeyName=#{options[:keyname]}' --capabilities CAPABILITY_IAM#{disable_rollback}"
+      command = "cfn-create-stack #{options[:stack_name]} --template-file #{temp_cfn_template.path} --parameters='KeyName=#{options[:keyname]}' --region #{options[:region]} --capabilities CAPABILITY_IAM#{disable_rollback}"
       Puppet::CloudFormation.execute(command)
     end
   end
