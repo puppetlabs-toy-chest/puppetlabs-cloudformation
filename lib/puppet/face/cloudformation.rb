@@ -74,7 +74,7 @@ Puppet::Face.define(:cloudformation, '0.0.1') do
       erb_template_file = Puppet::CloudFormation.get_pe_cfn_template
       cfn_template_contents = ERB.new(File.read(erb_template_file), 0, '-').result(binding)
       Puppet.debug(cfn_template_contents)
-      temp_cfn_template = Tempfile.new(['cfn-template', '.erb'])
+      temp_cfn_template = Puppet::CloudFormation.get_pe_cfn_tempfile
       temp_cfn_template.write(cfn_template_contents)
       temp_cfn_template.close
 
