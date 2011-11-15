@@ -27,7 +27,7 @@ Puppet::Face.define(:cloudformation, '0.0.1') do
       required
     end
     option '--keyname=' do
-      summary 'The AWS SSH key name as shown in the AWS console.  Please see the related list_keynames action.'
+      summary 'The AWS SSH key name as shown in the AWS console.'
       description <<-EOT
         This options expects the name of the SSH key pair as listed in the
         Amazon AWS console.  CloudFormation will use this information to tell Amazon
