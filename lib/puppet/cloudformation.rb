@@ -12,5 +12,11 @@ module Puppet::CloudFormation
     def get_pe_cfn_template
       File.join(File.dirname(__FILE__), 'templates', 'pe.erb')
     end
+    # this method exists to make it easier to stub this call
+    # so that we can capture the path of the generated template
+    # for testing
+    def get_pe_cfn_tempfile
+      Tempfile.new(['cfn-template', '.erb'])
+    end
   end
 end
