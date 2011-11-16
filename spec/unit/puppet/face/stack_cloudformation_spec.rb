@@ -3,6 +3,9 @@ require 'spec_helper'
 require 'puppet/cloudformation'
 describe Puppet::Face[:cloudformation, :current] do
   describe 'action deploy' do
+    before :each do
+      ENV['EC2_REGION'] = nil
+    end
     let :default_config do
       {'install_modules' => [],
        'puppet_agents' => {}
