@@ -159,7 +159,7 @@
             "\n" ]]}}
       }
     },
-<% puppet_agents.each do |agent_name, klasses| -%>
+<% puppet_agents.each do |agent_name, classify_data| classify_data ||= {} -%>
     "<%= agent_name %>": {
       "Type": "AWS::EC2::Instance",
       "DependsOn" : "PuppetMasterWaitCondition",
@@ -184,7 +184,8 @@
           }
         },
         "Puppet" : {
-          "Classes" : <%= (klasses || {}).to_pson %>
+          "Classes" : <%= (classify_data['classes'] || {}).to_pson %>,
+          "Parameters": <%= (classify_data['parameters'] || {}).to_pson %>
         }
       },
       "Properties": {
