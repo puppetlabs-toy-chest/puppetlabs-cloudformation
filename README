@@ -62,12 +62,22 @@ them.
 
 The structure of the hash is described below:
 
+parameterized classes:
+
 puppet_agents:
   resource_id:
-    class_name1:
-      class_param1
-    class_name2:
-      class_param2
+    classes:
+      class_name1:
+        class_param1: value
+
+non_parameterized classes
+
+puppet_agents:
+  resource_id:
+    classes:
+      - class_name1
+    parameters:
+      class_param1: value
 
 There are a few existing examples in teh config directory:
 
