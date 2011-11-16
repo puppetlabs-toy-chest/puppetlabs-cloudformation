@@ -18,7 +18,7 @@ if facts
   # the stackname and resource id facts are currently laid
   # down by the cloud formation script
   if facts.values['cfn_stack_name'] and facts.values['cfn_resource_id'] and File.exists?(credential_file)
-    command = "/opt/aws/bin/cfn-get-metadata --region us-east-1 -s #{facts.values['cfn_stack_name']} -r #{facts.values['cfn_resource_id']} -f #{credential_file} --key Puppet"
+    command = "/opt/aws/bin/cfn-get-metadata --region #{facts.values['cfn_region']} -s #{facts.values['cfn_stack_name']} -r #{facts.values['cfn_resource_id']} -f #{credential_file} --key Puppet"
     classification_meta_data = `#{command}`.downcase
     unless classification_meta_data == ''
       puts PSON.parse(classification_meta_data).to_yaml
