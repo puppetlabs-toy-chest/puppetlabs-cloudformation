@@ -175,7 +175,8 @@
               "/etc/puppetlabs/facter/facts.d/cloudformation.txt": {
                 "content" : { "Fn::Join" : ["", [
                   "cfn_stack_name=",{ "Ref": "AWS::StackName" }, "\n",
-                  "cfn_resource_id=<%= agent_name %>"
+                  "cfn_resource_id=<%= agent_name %>", "\n",
+                  "cfn_region=", { "Ref": "AWS::Region" }
                 ]] }
               }
             }
