@@ -1,6 +1,20 @@
 This project contains an aws cloud formation template that is capable of deploying
 a cluster of nodes with puppet enterprise installed.
 
+## Prerequisites
+
+AWS Credentials
+---------------
+You need an active AWS account with EC2 access.
+You'll also need a key pair in the region you wish to use. us-west-1 is recommended.
+Your AWS account needs full administrator rights at this time.
+
+Environment & Puppet
+--------------------
+This software requires Puppet >= 2.7.7.
+Export your chosen EC2 region in your environment. ex: `export EC2_REGION=us-west-1`
+
+
 ## Installation
 
 The amazon cloud formation client tools can be downloaded
@@ -28,6 +42,9 @@ After you source this file, verify that your cfn tools work:
 
   cfn-describe-stacks
 
+The command should return 'No Stacks found'. 
+
+
 ## Cloud formation face
 
 After you have sourced the bashrc file, you should be able to use the cloudformation face.
@@ -42,6 +59,7 @@ deploy a full application stack using Puppet Enterprise.
 It creates all of the required AWS resources, including: security groups, IAM users, an
 ec2 instance with the puppet master and modules installed, and a configurable number of
 puppet agents with their classification information specified.
+
 
 ## stack config file
 
@@ -79,10 +97,10 @@ puppet_agents:
     parameters:
       class_param1: value
 
-There are a few existing examples in teh config directory:
+There are a few existing examples in the config directory:
 
 # deploying a stack
 
 The following invocation will deploy one of the example stacks:
 
-  puppet cloudformation deploy --keyname dans_keys --config config/ntp_nodes.config --stack-name DanStack1 --disable-rollback
+  puppet cloudformation deploy --keyname your_key_name --config config/ntp_nodes.config --stack-name your_stack_name --disable-rollback
