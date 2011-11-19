@@ -2,28 +2,62 @@
 require 'puppet'
 require 'puppet/face'
 require 'yaml'
-# assumes that this credential file has been laid down
-# should contain credentials with cloudformation:DescribeStackResource
-# access to the resource being classified
-credential_file='/var/lib/cfn-init/data/cfn-credentials'
+$LOAD_PATH.push('/etc/puppetlabs/puppet/modules/puppetlabs-dashboard/site_lib')
 
-# figure out which facts terminus to use
-# is this the best way to set runmode out side of an application?
-$puppet_application_mode = Puppet::Util::RunMode[:master]
-Puppet[:config]='/etc/puppetlabs/puppet/puppet.conf'
-Puppet.parse_config
-facts = Puppet::Face[:facts, :current].find(ARGV.first)
-if facts
-  # right now this is hard coded for region us-east-1
-  # the stackname and resource id facts are currently laid
-  # down by the cloud formation script
-  if facts.values['cfn_stack_name'] and facts.values['cfn_resource_id'] and File.exists?(credential_file)
-    command = "/opt/aws/bin/cfn-get-metadata --region #{facts.values['cfn_region']} -s #{facts.values['cfn_stack_name']} -r #{facts.values['cfn_resource_id']} -f #{credential_file} --key Puppet"
-    classification_meta_data = `#{command}`.downcase
-    unless classification_meta_data == ''
-      puts PSON.parse(classification_meta_data).to_yaml
-      exit 0
+def get_ec2_classification_data(certname)
+  # assumes that this credential file has been laid down
+  # should contain credentials with cloudformation:DescribeStackResource
+  # access to the resource being classified
+  credential_file='/var/lib/cfn-init/data/cfn-credentials'
+
+  # figure out which facts terminus to use
+  # is this the best way to set runmode out side of an application?
+  $puppet_application_mode = Puppet::Util::RunMode[:master]
+  Puppet[:config]='/etc/puppetlabs/puppet/puppet.conf'
+  Puppet.parse_config
+  facts = Puppet::Face[:facts, :current].find(certname)
+  if facts
+    # right now this is hard coded for region us-east-1
+    # the stackname and resource id facts are currently laid
+    # down by the cloud formation script
+    if facts.values['cfn_stack_name'] and facts.values['cfn_resource_id'] and File.exists?(credential_file)
+      command = "/opt/aws/bin/cfn-get-metadata --region #{facts.values['cfn_region']} -s #{facts.values['cfn_stack_name']} -r #{facts.values['cfn_resource_id']} -f #{credential_file} --key Puppet"
+      classification_meta_data = `#{command}`.downcase
+      unless classification_meta_data == ''
+        return classification_data = PSON.parse(classification_meta_data)
+      end
     end
   end
+  {'classes' => []}
 end
-puts({'classes' => []}.to_yaml)
+
+# this is slow :(
+# I only want to look up the ec2 metadata the first time
+# I am looking it up first b/c I am not writing param
+# classes to the dashboard
+# I think that I am going to implement that as a param
+certname = ARGV.first
+classification_data = get_ec2_classification_data(certname)
+if classification_data['classes'].is_a?(Array)
+  # only do this if the node does not exist (the node file...)
+  unless File.exists?("/var/opt/lib/pe-puppet/yaml/node/#{certname}.yaml")
+
+  # I need to adjust this eventually...
+    Puppet::Face[:dashboard, :current].create_node(
+      :enc_server => 'localhost',
+      :enc_port => 443,
+      :enc_auth_passwd => 'cfn_password',
+      :enc_auth_user => 'cfn_user',
+      :enc_ssl => true,
+      :classes => classification_data['classes'],
+      :groups => classification_data['groups'],
+      :parameters => classification_data['parameters'],
+      :name => certname
+    )
+  end
+  # read classification info from dashboard
+  puts `curl -s -k -H "Accept: text/yaml" "https://localhost:443/nodes/#{certname}"`
+else
+  # this is with param classes, I am not sure if I want to support this
+  puts classification_data.to_yaml
+end
