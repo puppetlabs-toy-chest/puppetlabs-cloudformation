@@ -133,6 +133,9 @@
               }
             }
           }
+        },
+        "Dashboard": {
+          "Groups" : <%= dashboard_groups.to_pson %>
         }
       },
       "Properties": {
@@ -184,8 +187,9 @@
           }
         },
         "Puppet" : {
-          "Classes" : <%= (classify_data['classes'] || {}).to_pson %>,
-          "Parameters": <%= (classify_data['parameters'] || {}).to_pson %>
+          "Classes" : <%= (classify_data['classes'] || []).to_pson %>,
+          "Parameters": <%= (classify_data['parameters'] || {}).to_pson %>,
+          "Groups": <%= (classify_data['groups'] || []).to_pson %>
         }
       },
       "Properties": {
