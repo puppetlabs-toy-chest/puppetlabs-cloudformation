@@ -70,7 +70,7 @@ Puppet::Face.define(:cloudformation, '0.0.1') do
       if config.is_a?(Hash)
         install_modules = config['install_modules'] if config['install_modules']
         puppet_agents = config['puppet_agents'] if config['puppet_agents']
-        dasboard_groups = config['dashboard_groups'] if config['dashboard_groups']
+        dashboard_groups = config['dashboard_groups'] if config['dashboard_groups']
       end
 
       erb_template_file = Puppet::CloudFormation.get_pe_cfn_template
