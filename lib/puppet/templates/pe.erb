@@ -12,7 +12,7 @@
     "Payload" : {
       "Description" : "URL of PE installer payload",
       "Type" : "String",
-      "Default" : "https://s3.amazonaws.com/cloud-formation-pe/puppet-enterprise-2.0.0-el-6-i386.tar.gz"
+      "Default" : "https://s3.amazonaws.com/pe-builds/released/2.0.0/puppet-enterprise-2.0.0-el-6-i386.tar.gz"
     },
     "MasterAnswersFile" : {
       "Description": "URL where master answers file can be downloaded from",
@@ -130,6 +130,10 @@
               "/var/lib/cfn-init/data/external_node" : {
                 "source" : "https://s3.amazonaws.com/cloud-formation-pe/external_node",
                 "mode" : "00550"
+              },
+              "/var/lib/cfn-init/data/sync_group.rb" : {
+                "source" : "https://s3.amazonaws.com/cloud-formation-pe/sync_group.rb",
+                "mode" : "00550"
               }
             }
           }
@@ -157,6 +161,7 @@
             "mv /var/lib/cfn-init/data/external_node /etc/puppetlabs/puppet-dashboard/external_node", "\n",
             "chown -Rvf pe-puppet:pe-puppet /var/lib/cfn-init/data/cfn-credentials /etc/puppetlabs/puppet-dashboard/external_node /etc/puppetlabs/puppet/modules", "\n",
             "export PATH=/usr/local/bin/:$PATH;export RUBYLIB=/etc/puppetlabs/puppet/modules/puppetlabs-dashboard/site_lib;/opt/puppet/bin/puppet dashboard add_module --modulepath /etc/puppetlabs/puppet/modules/ --enc-server localhost --enc-port 443 --enc-ssl --enc-auth-user cfn_user --enc-auth-passwd cfn_password --module-name=<%= install_modules.join(',') %>", "\n",
+            "/var/lib/cfn-init/data/sync_group.rb\n",
             "echo 'node default { include pe_mcollective }' > /etc/puppetlabs/puppet/manifests/site.pp", "\n",
             "/opt/aws/bin/cfn-signal -e $? '", { "Ref" : "PuppetMasterWaitHandle" }, "'\n",
             "\n" ]]}}
@@ -246,7 +251,7 @@
       "Value" : { "Fn::GetAtt" : [ "PuppetMasterInstance", "PublicDnsName" ] }
     },
 <% puppet_agents.keys.each do |agent_name| -%>
-    "PuppetClientPublicDnsName" : {
+  "<%= agent_name %>PublicDnsName" : {
       "Value" : { "Fn::GetAtt" : [ "<%= agent_name %>", "PublicDnsName" ] }
     },
 <% end -%>
