@@ -250,7 +250,7 @@
     "PuppetMasterPublicDnsName" : {
       "Value" : { "Fn::GetAtt" : [ "PuppetMasterInstance", "PublicDnsName" ] }
     },
-<% puppet_agents.keys.each do |agent_name| -%>
+<% puppet_agents.keys[0..8].each do |agent_name| -%>
   "<%= agent_name %>PublicDnsName" : {
       "Value" : { "Fn::GetAtt" : [ "<%= agent_name %>", "PublicDnsName" ] }
     },
