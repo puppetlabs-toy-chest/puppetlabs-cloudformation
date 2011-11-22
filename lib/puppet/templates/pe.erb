@@ -75,6 +75,17 @@
         ]
       }
     },
+<% allowed_ports.each do |port| -%>
+    "Port<%= port %>": {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription" : "Allows incoming tcp connections to port #{port}",
+        "SecurityGroupIngress" : [
+        { "IpProtocol" : "tcp", "FromPort": "<%= port %>", "ToPort": "<%= port %>", "CidrIp": "0.0.0.0/0" }
+        ]
+      }
+    },
+<% end %>
     "PuppetClientSecurityGroup" : {
       "Type" : "AWS::EC2::SecurityGroup",
       "Properties": {
@@ -203,7 +214,12 @@
                     { "Fn::FindInMap" : [ "AWSInstanceType2Arch", { "Ref" : "AgentInstanceType" }, "Arch" ] }
  ] },
         "KeyName": { "Ref": "KeyName" },
-        "SecurityGroups":  [ { "Ref" : "PuppetClientSecurityGroup" } ],
+        "SecurityGroups":  [
+<% (classify_data['ports'] || []).each do |port| -%>
+          { "Ref" : "Port<%= port %>" },
+<% end -%>
+          { "Ref" : "PuppetClientSecurityGroup" }
+        ],
         "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
             "#!/bin/bash\n",
             "/opt/aws/bin/cfn-init --region ", { "Ref" : "AWS::Region" },
