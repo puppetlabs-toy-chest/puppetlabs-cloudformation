@@ -65,6 +65,7 @@ Puppet::Face.define(:cloudformation, '0.0.1') do
       # set the local vairables install_modules and puppet_agents from our config file
       config = YAML.load_file(options[:config])
       Puppet::CloudFormation.validate_config(config)
+      allowed_ports = Puppet::CloudFormation.get_ports(config)
       dashboard_groups = {}
       install_modules = []
       puppet_agents = {}
