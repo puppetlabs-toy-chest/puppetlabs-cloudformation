@@ -4,16 +4,6 @@
       "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
       "Type": "String"
     },
-    "PEId" : {
-      "Description" : "ID",
-      "Type" : "String",
-      "Default" : "puppet-enterprise-2.0.0-el-6-i386"
-    },
-    "Payload" : {
-      "Description" : "URL of PE installer payload",
-      "Type" : "String",
-      "Default" : "https://s3.amazonaws.com/pe-builds/released/2.0.0/puppet-enterprise-2.0.0-el-6-i386.tar.gz"
-    },
     "MasterAnswersFile" : {
       "Description": "URL where master answers file can be downloaded from",
       "Type" : "String",
@@ -41,6 +31,14 @@
     }
   },
   "Mappings" : {
+    "ArchToPayload" : {
+      "32" : {"Payload" : "https://s3.amazonaws.com/pe-builds/released/2.0.0/puppet-enterprise-2.0.0-el-6-i386.tar.gz"},
+      "64" : {"Payload" : "https://s3.amazonaws.com/pe-builds/released/2.0.0/puppet-enterprise-2.0.0-el-6-x86_64.tar.gz"}
+    },
+    "ArchToPayloadDir" : {
+      "32" : {"PayloadDir" : "puppet-enterprise-2.0.0-el-6-i386"},
+      "64" : {"PayloadDir" : "puppet-enterprise-2.0.0-el-6-x86_64"}
+    },
     "AWSInstanceType2Arch" : {
       "t1.micro"    : { "Arch" : "32" },
       "m1.small"    : { "Arch" : "32" },
@@ -122,8 +120,12 @@
         "AWS::CloudFormation::Init" : {
           "config" : {
             "sources": {
-              "/root/": {"Ref" : "Payload"},
-              "/etc/puppetlabs/puppet/modules/puppetlabs-dashboard/" : "https://github.com/bodepd/puppetlabs-dashboard/tarball/master"
+              "/root/": { "Fn::FindInMap" : [
+                  "ArchToPayload",
+                  { "Fn::FindInMap" :
+                    ["AWSInstanceType2Arch", { "Ref" : "MasterInstanceType" }, "Arch"] },
+                "Payload"] },
+                "/etc/puppetlabs/puppet/modules/puppetlabs-dashboard/" : "https://github.com/bodepd/puppetlabs-dashboard/tarball/master"
             },
             "files": {
               "/root/answers": {
@@ -167,7 +169,14 @@
             "    --access-key ", { "Ref" : "CFNKeys" },
             "    --secret-key ", { "Fn::GetAtt" : ["CFNKeys", "SecretAccessKey"]}, "\n",
             "echo \"`ifconfig eth0 | grep 'inet addr' | cut -d ':' -f 2 | cut -d ' ' -f 1` `hostname -s` `hostname -f`\" >> /etc/hosts", "\n",
-            "/root/", {"Ref" : "PEId"},"/puppet-enterprise-installer -a /root/answers -D  >& /tmp/pe-install.txt",  "\n",
+            "/root/",
+            { "Fn::FindInMap" : [
+              "ArchToPayloadDir",
+               { "Fn::FindInMap" :
+                    ["AWSInstanceType2Arch", { "Ref" : "MasterInstanceType" }, "Arch"] },
+               "PayloadDir"]
+            },
+            "/puppet-enterprise-installer -a /root/answers -D  >& /tmp/pe-install.txt",  "\n",
             "echo '*' >> /etc/puppetlabs/puppet/autosign.conf", "\n",
             "mv /var/lib/cfn-init/data/external_node /etc/puppetlabs/puppet-dashboard/external_node", "\n",
             "chown -Rvf pe-puppet:pe-puppet /var/lib/cfn-init/data/cfn-credentials /etc/puppetlabs/puppet-dashboard/external_node /etc/puppetlabs/puppet/modules", "\n",
@@ -186,7 +195,11 @@
         "AWS::CloudFormation::Init" : {
           "config" : {
             "sources": {
-              "/root/":  { "Ref" : "Payload" }
+              "/root/": { "Fn::FindInMap" : [
+                  "ArchToPayload",
+                  { "Fn::FindInMap" :
+                    ["AWSInstanceType2Arch", { "Ref" : "MasterInstanceType" }, "Arch"] },
+                "Payload"] }
             },
             "files": {
               "/root/answers": {
@@ -227,7 +240,14 @@
             "    --access-key ", { "Ref" : "CFNKeys" },
             "    --secret-key ", { "Fn::GetAtt" : ["CFNKeys", "SecretAccessKey"]}, "\n",
             "echo 'q_puppetagent_server=", { "Fn::GetAtt" : [ "PuppetMasterInstance", "PrivateDnsName" ] } ,"' >> /root/answers", "\n",
-            "/root/", {"Ref" : "PEId"},"/puppet-enterprise-installer -a /root/answers -D  >& /tmp/pe-install.txt",  "\n",
+            "/root/",
+            { "Fn::FindInMap" : [
+              "ArchToPayloadDir",
+               { "Fn::FindInMap" :
+                    ["AWSInstanceType2Arch", { "Ref" : "MasterInstanceType" }, "Arch"] },
+               "PayloadDir"]
+            },
+            "/puppet-enterprise-installer -a /root/answers -D  >& /tmp/pe-install.txt",  "\n",
             "/opt/aws/bin/cfn-signal -e $? '", { "Ref" : "<%= agent_name %>WaitHandle" }, "'\n",
             "\n" ]]}}
       }
