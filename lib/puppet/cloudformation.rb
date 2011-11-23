@@ -73,7 +73,9 @@ module Puppet::CloudFormation
     # and create security groups for them
     # right now it assumes that all ports are tcp ports
     def get_ports(config)
+      config ||= {}
       (config['puppet_agents'] || {}).collect do |agent_name, agent_values|
+        agent_values ||= {}
         ports = agent_values['ports'] || []
         if ports.is_a?(Array)
           ports = ports
