@@ -36,6 +36,24 @@ Puppet::Face.define(:cloudformation, '0.0.1') do
       EOT
       required
     end
+    ['master','agent'].each do |instance|
+      option "--#{instance}-type=" do
+        summary "Type of #{instance} instance."
+        description <<-EOT
+          Type of #{instance} instance to be launched. Type specifies characteristics that
+          the #{instance} will have such as architecture, memory, processing power, storage
+          and IO performance. The type selected will determine the cost of a machine instance.
+          Supported types are: 'm1.small','m1.large','m1.xlarge','t1.micro','m2.xlarge',
+          'm2.2xlarge','x2.4xlarge','c1.medium','c1.xlarge','cc1.4xlarge'.
+        EOT
+        before_action do |action, args, options|
+          supported_types = ['m1.small','m1.large','m1.xlarge','t1.micro','m2.xlarge','m2.2xlarge','x2.4xlarge','c1.medium','c1.xlarge','cc1.4xlarge']
+          unless supported_types.include?(options["#{instance}_type".to_sym])
+            raise ArgumentError, "Invalid type #{instance}: Platform must be one of the following: #{supported_types.join(', ')}"
+          end
+        end
+      end
+    end
     option '--region=' do
       summary "The geographic region of the instance. Defaults to us-east-1."
       description <<-'EOT'
@@ -61,6 +79,8 @@ Puppet::Face.define(:cloudformation, '0.0.1') do
     when_invoked do |options|
 
       disable_rollback = options[:disable_rollback] ? ' --disable-rollback' : ''
+      master_type = options[:master_type] ? ";MasterInstanceType=#{options[:master_type]}" : ""
+      agent_type = options[:agent_type] ? ";AgentInstanceType=#{options[:agent_type]}" : ""
 
       # set the local vairables install_modules and puppet_agents from our config file
       config = YAML.load_file(options[:config])
@@ -82,7 +102,7 @@ Puppet::Face.define(:cloudformation, '0.0.1') do
       temp_cfn_template.write(cfn_template_contents)
       temp_cfn_template.close
 
-      command = "cfn-create-stack #{options[:stack_name]} --template-file #{temp_cfn_template.path} --parameters='KeyName=#{options[:keyname]}' --region #{options[:region]} --capabilities CAPABILITY_IAM#{disable_rollback}"
+      command = "cfn-create-stack #{options[:stack_name]} --template-file #{temp_cfn_template.path} --parameters='KeyName=#{options[:keyname]}#{master_type}#{agent_type}' --region #{options[:region]} --capabilities CAPABILITY_IAM#{disable_rollback}"
       Puppet::CloudFormation.execute(command)
     end
   end
