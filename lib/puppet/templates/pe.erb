@@ -198,7 +198,7 @@
               "/root/": { "Fn::FindInMap" : [
                   "ArchToPayload",
                   { "Fn::FindInMap" :
-                    ["AWSInstanceType2Arch", { "Ref" : "MasterInstanceType" }, "Arch"] },
+                    ["AWSInstanceType2Arch", { "Ref" : "AgentInstanceType" }, "Arch"] },
                 "Payload"] }
             },
             "files": {
@@ -244,7 +244,7 @@
             { "Fn::FindInMap" : [
               "ArchToPayloadDir",
                { "Fn::FindInMap" :
-                    ["AWSInstanceType2Arch", { "Ref" : "MasterInstanceType" }, "Arch"] },
+                    ["AWSInstanceType2Arch", { "Ref" : "AgentInstanceType" }, "Arch"] },
                "PayloadDir"]
             },
             "/puppet-enterprise-installer -a /root/answers -D  >& /tmp/pe-install.txt",  "\n",
