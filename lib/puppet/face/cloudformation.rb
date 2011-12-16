@@ -8,22 +8,21 @@ Puppet::Face.define(:cloudformation, '0.0.1') do
   option '--config=' do
     summary 'Config file used to customize PE cloudformation template'
     description <<-EOT
-      config file that is used to specify list of modules to install
-      and how to classify the agents. This file should be a hash represented
-      as YAML with two keys:
-      install_modules: the modules from the forge that should be installed on the master
-      puppet_agents: resources names of agent ec2 instances with its classes that should
-      be added.
+      Config file that is used to specify information about how to bootstrap
+      the PE environment that will be created.
+      This file is represented as a hash in YAML with the following keys:
+      install_modules: modules that should be downloaded from the forge.
+      dashboard_groups: groups that should be created in the Dashboard.
+      puppet_agents: resources names of ec2 instances that should be provisioned along with their classification information.
     EOT
     required
   end
 
   action 'deploy' do
+    summary 'Deploys a full PE stack into EC2'
     description 'Deploys a PE stack'
     option '--stack-name=' do
-      description <<-EOT
-        Name of cloudformation stack to create
-      EOT
+      summary 'Name of cloudformation stack to create'
       required
     end
     option '--keyname=' do
@@ -73,7 +72,7 @@ Puppet::Face.define(:cloudformation, '0.0.1') do
       end
     end
     option '--disable-rollback' do
-      summary 'by default cloudformation terminates stacks that have failure, this disables that feature'
+      summary 'Disables the default cloudformation behavior that terminates failed stacks.'
     end
 
     when_invoked do |options|
