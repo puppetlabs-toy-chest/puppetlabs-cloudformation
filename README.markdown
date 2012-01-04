@@ -24,21 +24,30 @@ Your AWS account needs full administrator rights at this time.
 
 Environment & Puppet
 --------------------
-This software requires Puppet >= 2.7.7.
+This software requires Puppet >= 2.7.6 (or PE >= 2.0).
+This software also requires Java be installed.
 Export your chosen EC2 region in your environment. ex: `export EC2_REGION=us-west-1`
 
 
 ## Installation
 
-The amazon cloud formation client tools can be downloaded
-using the cloudformation puppet class.
+Static releases can be found on the Puppet Forge: http://forge.puppetlabs.com/puppetlabs/cloudformation
+The latest code is always available on Github: https://github.com/puppetlabs/puppetlabs-cloudformation
+
+The amazon Cloud Formation client tools and the Puppet Face can be installed and
+configured easily using the cloudformation Puppet class.
 
 The following example manifest can be found at examples/install.pp
 
   class { 'cloudformation':
     aws_access_key => '< your key here >',
-    aws_secret_key => '< your secret key here >'
+    aws_secret_key => '< your secret key here >',
+    # java_home => '< your java_home >',
   }
+
+It may also be necessary to fill in the java home attribute so that it points to
+where java has been installed. It currently defaults to the location of Java on a
+Mac(/System/Library/Frameworks/JavaVM.framework/Versions/1.6.0/Home).
 
 Add your aws credentials to the class declaration, ensure the cloudformation module
 is in your module path, and use puppet to apply the installation manifest:
@@ -116,13 +125,13 @@ puppet_agents:
 
 ## Cloud Formation Puppet Face
 
-After you have sourced the bashrc file, you should be able to use the cloudformation puppet face.
+After you have sourced the bashrc file, you should be able to use the Cloud Formation Puppet Face.
 
 To get details of how to use the face, you can run:
 
   `puppet help cloudformation deploy`
 
-The cloudformation face accepts a configuration file as specified above and then
+The Cloud Formation Face accepts a configuration file as specified above and then
 deploys a full application stack using Puppet Enterprise.
 
 It creates all of the required AWS resources, including: security groups, IAM users, an
@@ -131,6 +140,6 @@ puppet agents with their classification information specified.
 
 The following invocation will deploy one of the example stacks:
 
-  `puppet cloudformation deploy --keyname your_key_name --config config/ntp_nodes.config --stack-name your_stack_name --disable-rollback`
+  `puppet cloudformation deploy --keyname your_key_name --config config/pedemo.config --stack-name your_stack_name --disable-rollback`
 
 --disable-rollback prevents EC2 from destroying your instances if the stack failed to build properly.
