@@ -18,15 +18,15 @@ One config file, one command and you're done!
 
 AWS Credentials
 ---------------
-You need an active AWS account with EC2 access.
-You'll also need a key pair in the region you wish to use. us-west-1 is recommended.
-Your AWS account needs full administrator rights at this time.
+You need an active AWS account with EC2 access.  
+You'll also need a key pair in the region you wish to use. us-west-1 is recommended.  
+Your AWS account needs full administrator rights at this time.  
 
 Environment & Puppet
 --------------------
-This software requires Puppet >= 2.7.6 (or PE >= 2.0).
-This software also requires Java be installed.
-Export your chosen EC2 region in your environment. ex: `export EC2_REGION=us-west-1`
+This software requires Puppet >= 2.7.6 (or PE >= 2.0).  
+This software also requires Java be installed.  
+Export your chosen EC2 region in your environment. ex: `export EC2_REGION=us-west-1`  
 
 
 ## Installation
