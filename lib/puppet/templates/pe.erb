@@ -7,7 +7,7 @@
     "MasterAnswersFile" : {
       "Description": "URL where master answers file can be downloaded from",
       "Type" : "String",
-      "Default" : "https://s3.amazonaws.com/cloud-formation-pe/full.answers"
+      "Default" : "https://s3.amazonaws.com/cloud-formation-pe/pe25.answers"
     },
     "AgentAnswersFile" : {
       "Description": "URL where agent answers file can be downloaded from",
@@ -32,12 +32,12 @@
   },
   "Mappings" : {
     "ArchToPayload" : {
-      "32" : {"Payload" : "https://s3.amazonaws.com/pe-builds/released/2.0.1/puppet-enterprise-2.0.1-el-6-i386.tar.gz"},
-      "64" : {"Payload" : "https://s3.amazonaws.com/pe-builds/released/2.0.1/puppet-enterprise-2.0.1-el-6-x86_64.tar.gz"}
+      "32" : {"Payload" : "https://s3.amazonaws.com/pe-builds/released/2.5.0/puppet-enterprise-2.5.0-el-6-i386.tar.gz"},
+      "64" : {"Payload" : "https://s3.amazonaws.com/pe-builds/released/2.5.0/puppet-enterprise-2.5.0-el-6-x86_64.tar.gz"}
     },
     "ArchToPayloadDir" : {
-      "32" : {"PayloadDir" : "puppet-enterprise-2.0.1-el-6-i386"},
-      "64" : {"PayloadDir" : "puppet-enterprise-2.0.1-el-6-x86_64"}
+      "32" : {"PayloadDir" : "puppet-enterprise-2.5.0-el-6-i386"},
+      "64" : {"PayloadDir" : "puppet-enterprise-2.5.0-el-6-x86_64"}
     },
     "AWSInstanceType2Arch" : {
       "t1.micro"    : { "Arch" : "32" },
