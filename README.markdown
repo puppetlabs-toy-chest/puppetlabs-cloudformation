@@ -143,3 +143,11 @@ The following invocation will deploy one of the example stacks:
   `puppet cloudformation deploy --keyname your_key_name --config config/pedemo.config --stack-name your_stack_name --disable-rollback`
 
 --disable-rollback prevents EC2 from destroying your instances if the stack failed to build properly.
+
+## Logging into the Puppet Master
+
+Once your stack is built, cfn-describe-stacks will return CREATE_COMPLETE and the public hostname for your Puppet Master.
+
+To visit the Puppet Enterprise Console, open your web browser and visit https://public_hostname_here and login with username: ec2_user@example.com and password: ec2_password
+
+To learn more about Puppet Enterprise, see http://docs.puppetlabs.com/pe/index.html.
