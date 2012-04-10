@@ -47,7 +47,7 @@ if classification_data['classes'].is_a?(Array)
       :enc_server => 'localhost',
       :enc_port => 443,
       :enc_auth_passwd => 'cfn_password',
-      :enc_auth_user => 'cfn_user',
+      :enc_auth_user => 'cfn_user@example.com',
       :enc_ssl => true,
       :classes => classification_data['classes'],
       :groups => classification_data['groups'],

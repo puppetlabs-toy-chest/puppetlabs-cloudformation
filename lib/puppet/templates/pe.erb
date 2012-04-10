@@ -7,7 +7,7 @@
     "MasterAnswersFile" : {
       "Description": "URL where master answers file can be downloaded from",
       "Type" : "String",
-      "Default" : "https://s3.amazonaws.com/cloud-formation-pe/full.answers"
+      "Default" : "https://s3.amazonaws.com/cloud-formation-pe/pe25.answers"
     },
     "AgentAnswersFile" : {
       "Description": "URL where agent answers file can be downloaded from",
@@ -32,12 +32,12 @@
   },
   "Mappings" : {
     "ArchToPayload" : {
-      "32" : {"Payload" : "https://s3.amazonaws.com/pe-builds/released/2.0.1/puppet-enterprise-2.0.1-el-6-i386.tar.gz"},
-      "64" : {"Payload" : "https://s3.amazonaws.com/pe-builds/released/2.0.1/puppet-enterprise-2.0.1-el-6-x86_64.tar.gz"}
+      "32" : {"Payload" : "https://s3.amazonaws.com/pe-builds/released/2.5.0/puppet-enterprise-2.5.0-el-6-i386.tar.gz"},
+      "64" : {"Payload" : "https://s3.amazonaws.com/pe-builds/released/2.5.0/puppet-enterprise-2.5.0-el-6-x86_64.tar.gz"}
     },
     "ArchToPayloadDir" : {
-      "32" : {"PayloadDir" : "puppet-enterprise-2.0.1-el-6-i386"},
-      "64" : {"PayloadDir" : "puppet-enterprise-2.0.1-el-6-x86_64"}
+      "32" : {"PayloadDir" : "puppet-enterprise-2.5.0-el-6-i386"},
+      "64" : {"PayloadDir" : "puppet-enterprise-2.5.0-el-6-x86_64"}
     },
     "AWSInstanceType2Arch" : {
       "t1.micro"    : { "Arch" : "32" },
@@ -168,7 +168,7 @@
             "    -s ", { "Ref" : "AWS::StackName" }, " -r PuppetMasterInstance ",
             "    --access-key ", { "Ref" : "CFNKeys" },
             "    --secret-key ", { "Fn::GetAtt" : ["CFNKeys", "SecretAccessKey"]}, "\n",
-            "echo \"`ifconfig eth0 | grep 'inet addr' | cut -d ':' -f 2 | cut -d ' ' -f 1` `hostname -s` `hostname -f`\" >> /etc/hosts", "\n",
+            "yum install -y mysql51 mysql51-server; echo \"`ifconfig eth0 | grep 'inet addr' | cut -d ':' -f 2 | cut -d ' ' -f 1` `hostname -s` `hostname -f`\" >> /etc/hosts", "\n",
             "/root/",
             { "Fn::FindInMap" : [
               "ArchToPayloadDir",
@@ -180,7 +180,7 @@
             "echo '*' >> /etc/puppetlabs/puppet/autosign.conf", "\n",
             "mv /var/lib/cfn-init/data/external_node /etc/puppetlabs/puppet-dashboard/external_node", "\n",
             "chown -Rvf pe-puppet:pe-puppet /var/lib/cfn-init/data/cfn-credentials /etc/puppetlabs/puppet-dashboard/external_node /etc/puppetlabs/puppet/modules", "\n",
-            "export PATH=/usr/local/bin/:$PATH;export RUBYLIB=/etc/puppetlabs/puppet/modules/puppetlabs-dashboard/site_lib;/opt/puppet/bin/puppet dashboard add_module --modulepath /etc/puppetlabs/puppet/modules/ --enc-server localhost --enc-port 443 --enc-ssl --enc-auth-user cfn_user --enc-auth-passwd cfn_password --module-names=<%= install_modules.join(',') %>", "\n",
+            "export PATH=/usr/local/bin/:$PATH;export RUBYLIB=/etc/puppetlabs/puppet/modules/puppetlabs-dashboard/site_lib;/opt/puppet/bin/puppet dashboard add_module --modulepath /etc/puppetlabs/puppet/modules/ --enc-server localhost --enc-port 443 --enc-ssl --enc-auth-user cfn_user@example.com --enc-auth-passwd cfn_password --module-names=<%= install_modules.join(',') %>", "\n",
             "/var/lib/cfn-init/data/sync_group.rb\n",
             "echo 'node default { include pe_mcollective }' > /etc/puppetlabs/puppet/manifests/site.pp", "\n",
             "/opt/aws/bin/cfn-signal -e $? '", { "Ref" : "PuppetMasterWaitHandle" }, "'\n",
