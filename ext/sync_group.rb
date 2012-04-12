@@ -11,7 +11,7 @@ if group_meta_data.is_a?(Hash) and group_meta_data['Dashboard'].is_a?(Hash)
       :enc_server => 'localhost',
       :enc_port => 443,
       :enc_auth_passwd => 'cfn_password',
-      :enc_auth_user => 'cfn_user',
+      :enc_auth_user => 'cfn_user@example.com',
       :enc_ssl => true,
       :classes => v['classes'],
       :parent_groups => v['parent_groups'],
