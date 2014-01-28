@@ -5,7 +5,7 @@ require 'tempfile'
 require 'puppet/cloudformation'
 Puppet::Face.define(:cloudformation, '0.0.1') do
 
-  option '--config=' do
+  option '--cfconfig=' do
     summary 'Config file used to customize PE cloudformation template'
     description <<-EOT
       Config file that is used to specify information about how to bootstrap
