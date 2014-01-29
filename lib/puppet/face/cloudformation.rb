@@ -82,7 +82,7 @@ Puppet::Face.define(:cloudformation, '0.0.1') do
       agent_type = options[:agent_type] ? ";AgentInstanceType=#{options[:agent_type]}" : ""
 
       # set the local vairables install_modules and puppet_agents from our config file
-      config = YAML.load_file(options[:config])
+      config = YAML.load_file(options[:cfconfig])
       Puppet::CloudFormation.validate_config(config)
       allowed_ports = Puppet::CloudFormation.get_ports(config)
       dashboard_groups = {}
