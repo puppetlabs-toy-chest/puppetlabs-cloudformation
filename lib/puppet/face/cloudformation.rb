@@ -46,7 +46,7 @@ Puppet::Face.define(:cloudformation, '0.0.1') do
           'm2.2xlarge','x2.4xlarge','c1.medium','c1.xlarge','cc1.4xlarge'.
         EOT
         before_action do |action, args, options|
-          supported_types = ['m1.small','m1.large','m1.xlarge','t1.micro','m2.xlarge','m2.2xlarge','x2.4xlarge','c1.medium','c1.xlarge','cc1.4xlarge']
+          supported_types = ['m1.medium','m1.small','m1.large','m1.xlarge','t1.micro','m2.xlarge','m2.2xlarge','x2.4xlarge','c1.medium','c1.xlarge','cc1.4xlarge']
           unless supported_types.include?(options["#{instance}_type".to_sym])
             raise ArgumentError, "Invalid type #{instance}: Platform must be one of the following: #{supported_types.join(', ')}"
           end
