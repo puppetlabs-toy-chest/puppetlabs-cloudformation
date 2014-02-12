@@ -38,6 +38,13 @@ class cloudformation(
   $aws_credential_file = "${base_dir}/aws_credentials"
 ) {
 
+  validate_string($aws_access_key))
+  validate_string($aws_secret_key)
+  validate_absolute_path($java_home)
+  validate_string($cfn_version)
+  validate_absolute_path($base_dir)
+  validate_absolute_path($aws_credential_file)
+
   ensure_packages(['unzip','curl'])
 
   exec { 'download_cloudformation_client':
