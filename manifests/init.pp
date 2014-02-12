@@ -38,6 +38,8 @@ class cloudformation(
   $aws_credential_file = "${base_dir}/aws_credentials"
 ) {
 
+  ensure_packages(['unzip','curl'])
+
   exec { 'download_cloudformation_client':
     command => '/usr/bin/curl -o AWSCloudFormation-cli.zip https://s3.amazonaws.com/cloudformation-cli/AWSCloudFormation-cli.zip',
     cwd => $base_dir,
