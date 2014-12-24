@@ -35,8 +35,26 @@ class cloudformation(
   $java_home = '/System/Library/Frameworks/JavaVM.framework/Versions/1.6.0/Home',
   $cfn_version = '1.0.9',
   $base_dir = get_module_path($module_name),
-  $aws_credential_file = "${base_dir}/aws_credentials"
+  $aws_credential_file = '/tmp/thisfileshouldneverexist'
 ) {
+
+  # This is so dumb. Old code had $aws_credential_files referencing $base_dir
+  # which is a no-no in class params. $base_dir value not available there.
+  if '/tmp/thisfileshouldneverexist' == $aws_credential_file {
+    $my_cf_module_path = get_module_path($module_name)
+    $real_aws_credential_file = "${my_cf_module_path}/aws_credentials"
+  } else {
+    $real_aws_credential_file = $aws_credential_file
+  }
+
+  validate_string($aws_access_key)
+  validate_string($aws_secret_key)
+  validate_absolute_path($java_home)
+  validate_string($cfn_version)
+  validate_absolute_path($base_dir)
+  validate_absolute_path($real_aws_credential_file)
+
+  ensure_packages(['unzip','curl'])
 
   exec { 'download_cloudformation_client':
     command => '/usr/bin/curl -o AWSCloudFormation-cli.zip https://s3.amazonaws.com/cloudformation-cli/AWSCloudFormation-cli.zip',
@@ -49,7 +67,7 @@ class cloudformation(
     refreshonly => true,
     creates => "${base_dir}/AWSCloudFormation-#{cfn_version}",
   }
-  file { $aws_credential_file:
+  file { $real_aws_credential_file:
     content => template('cloudformation/credential-file.erb'),
   }
   file { "${base_dir}/bashrc_cfn":
