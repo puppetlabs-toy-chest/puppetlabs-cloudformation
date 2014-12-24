@@ -140,7 +140,7 @@ puppet agents with their classification information specified.
 
 The following invocation will deploy one of the example stacks:
 
-  `puppet cloudformation deploy --keyname your_key_name --config config/pedemo.config --stack-name your_stack_name --disable-rollback`
+  `puppet cloudformation deploy --keyname your_key_name --cfconfig config/pedemo.config --stack-name your_stack_name --disable-rollback`
 
 --disable-rollback prevents EC2 from destroying your instances if the stack failed to build properly.
 

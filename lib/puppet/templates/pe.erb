@@ -7,7 +7,7 @@
     "MasterAnswersFile" : {
       "Description": "URL where master answers file can be downloaded from",
       "Type" : "String",
-      "Default" : "https://s3.amazonaws.com/cloud-formation-pe/pe25.answers"
+      "Default" : "https://s3-us-west-1.amazonaws.com/pde-pedemo/pe31.answers"
     },
     "AgentAnswersFile" : {
       "Description": "URL where agent answers file can be downloaded from",
@@ -22,7 +22,7 @@
     "MasterInstanceType" : {
       "Description" : "Instance type for master",
       "Type" : "String",
-      "Default" : "m1.small"
+      "Default" : "m1.medium"
     },
     "AgentInstanceType" : {
       "Description" : "Instance type for agent",
@@ -32,16 +32,17 @@
   },
   "Mappings" : {
     "ArchToPayload" : {
-      "32" : {"Payload" : "https://s3.amazonaws.com/pe-builds/released/2.5.0/puppet-enterprise-2.5.0-el-6-i386.tar.gz"},
-      "64" : {"Payload" : "https://s3.amazonaws.com/pe-builds/released/2.5.0/puppet-enterprise-2.5.0-el-6-x86_64.tar.gz"}
+      "32" : {"Payload" : "https://s3.amazonaws.com/pe-builds/released/3.1.1/puppet-enterprise-3.1.1-el-6-i386.tar.gz"},
+      "64" : {"Payload" : "https://s3.amazonaws.com/pe-builds/released/3.1.1/puppet-enterprise-3.1.1-el-6-x86_64.tar.gz"}
     },
     "ArchToPayloadDir" : {
-      "32" : {"PayloadDir" : "puppet-enterprise-2.5.0-el-6-i386"},
-      "64" : {"PayloadDir" : "puppet-enterprise-2.5.0-el-6-x86_64"}
+      "32" : {"PayloadDir" : "puppet-enterprise-3.1.1-el-6-i386"},
+      "64" : {"PayloadDir" : "puppet-enterprise-3.1.1-el-6-x86_64"}
     },
     "AWSInstanceType2Arch" : {
       "t1.micro"    : { "Arch" : "32" },
       "m1.small"    : { "Arch" : "32" },
+      "m1.medium"    : { "Arch" : "32" },
       "m1.large"    : { "Arch" : "64" },
       "m1.xlarge"   : { "Arch" : "64" },
       "m2.xlarge"   : { "Arch" : "64" },
@@ -53,7 +54,7 @@
     },
     "AWSRegionArch2AMI" : {
       "us-east-1"      : { "32" : "ami-7f418316", "64" : "ami-7341831a" },
-      "us-west-1"      : { "32" : "ami-951945d0", "64" : "ami-971945d2" },
+      "us-west-1"      : { "32" : "ami-923909d7", "64" : "ami-971945d2" },
       "us-west-2"      : { "32" : "ami-16fd7026", "64" : "ami-10fd7020" },
       "eu-west-1"      : { "32" : "ami-24506250", "64" : "ami-20506254" },
       "ap-southeast-1" : { "32" : "ami-74dda626", "64" : "ami-7edda62c" },
