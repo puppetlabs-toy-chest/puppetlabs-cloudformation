@@ -1,5 +1,5 @@
 name    'puppetlabs-cloudformation'
-version '0.0.1'
+version '999.999.999'
 source 'git://github.com/puppetlabs/puppetlabs-cloudformation'
 author 'Puppet Labs'
 license 'Apache Version 2.0'
