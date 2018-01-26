@@ -29,6 +29,9 @@
 #   - creates an example bashrc file that can be used to configure project.
 #   - creates a credential file
 #
+
+warning('This module is no longer supported')
+
 class cloudformation(
   $aws_access_key,
   $aws_secret_key,
